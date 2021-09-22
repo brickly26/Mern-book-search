@@ -37,14 +37,20 @@ const resolvers = {
       return { token, user };
     },
     saveBook: async (parent, {user, body} ) => {
-      const book = await Book.create({ user, book });
 
-      await User.findOneAndUpdate(
-        { username: user },
+      const user = await User.findOneAndUpdate(
+        { _id: user.id },
         { $addToSet: { savedBooks: body }}
       );
 
-      return book;
+      return user;
+    },
+    removeBook: async (parent, { user, params }) => {
+      const updatedUser = await User.findOneAndUpdate(
+        { _id: user._id },
+        { $pull: { savedBooks: { bookId: params.bookId } } },
+        { new: true }
+      )
     }
   }
 }
