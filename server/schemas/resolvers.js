@@ -7,8 +7,11 @@ const resolvers = {
     users: async () => {
       return User.find().populate('savedBooks');
     },
-    user: async () => {
-      return User.findOne
-    }
+    user: async (parent, { username }) => {
+      return User.findOne({userName}).populate('savedBooks')
+    },
+    books
   }
 }
+
+module.exports = resolvers;
