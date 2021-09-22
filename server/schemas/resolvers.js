@@ -1,11 +1,14 @@
 const { AuthenticationError } = require('apollo-server-express');
-const { User, Book } = require("../modles");
+const { User } = require("../models");
 const { signToken } = require('../utils/auth');
 
 const resolvers = {
   Query: {
+    users: async (parent, args) => {
+      return User.find({})
+    },
     user: async (parent, { username }) => {
-      return User.findOne({userName})
+      return User.findOne({username})
     },
     books: async (parent, { username }) => {
       const user = User.findOne({ username }).populate('savedBooks')
@@ -15,8 +18,8 @@ const resolvers = {
   },
 
   Mutation: {
-    addUser: async (parent, arg) => {
-      const user  = await User.create(arg);
+    addUser: async (parent, { username, email, password}) => {
+      const user  = await User.create( { username, email, password });
       const token = signToken(user);
       return { token, user };
     },
@@ -36,21 +39,22 @@ const resolvers = {
       const token = signToken(user);
       return { token, user };
     },
-    addBook: async (parent, {user, body} ) => {
-      console.log(body)
-      const user = await User.findOneAndUpdate(
-        { _id: user.id },
-        { $addToSet: { savedBooks: body }}
-      );
-
-      return user;
+    addBook: async (parent, args, context ) => {
+      if (context.user) {
+        return await User.findOneAndUpdate(
+          { _id: context.user.id },
+          { $addToSet: { savedBooks: args }}
+        );
+      }
     },
-    removeBook: async (parent, { user, params }) => {
-      const updatedUser = await User.findOneAndUpdate(
-        { _id: user._id },
-        { $pull: { savedBooks: { bookId: params.bookId } } },
-        { new: true }
-      )
+    removeBook: async (parent, args, context) => {
+      if (context.user) {
+        return User.findOneAndUpdate(
+          { _id: context.user._id },
+          { $pull: { savedBooks: { bookId: args.bookId } } },
+          { new: true }
+        )
+      }
     }
   }
 }
